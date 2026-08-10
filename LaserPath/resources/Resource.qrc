@@ -1,0 +1,40 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="file">icons/titleBar/titleBar_file.svg</file>
+        <file alias="save">icons/titleBar/titleBar_save.svg</file>
+        <file alias="undo">icons/titleBar/titleBar_undo.svg</file>
+        <file alias="sep">icons/titleBar/titleBar_line.svg</file>
+        <file alias="menu">icons/titleBar/titleBar_dropDown.svg</file>
+        <file alias="redo">icons/titleBar/titleBar_redo.svg</file>
+        <file alias="close">icons/titleBar/titleBar_close.svg</file>
+        <file alias="max">icons/titleBar/titleBar_max.svg</file>
+        <file alias="min">icons/titleBar/titleBar_min.svg</file>
+        <file alias="restore">icons/titleBar/titleBar_window.svg</file>
+        <file alias="prepare">icons/topBar/tab_prepare.svg</file>
+        <file alias="preview">icons/topBar/tab_preview.svg</file>
+        <file alias="reset">icons/sideBarPanel/sideBarPanel_undo.svg</file>
+        <file alias="device">icons/sideBarPanel/sideBarPanel_device.svg</file>
+        <file alias="edit">icons/sideBarPanel/edit_btn.svg</file>
+        <file alias="image">icons/sideBarPanel/device_image.png</file>
+        <file alias="arrow">icons/sideBarPanel/machine_dropDown.svg</file>
+        <file alias="wire">icons/sideBarPanel/line_width.svg</file>
+        <file alias="settings">icons/sideBarPanel/machine_settings.svg</file>
+        <file alias="sideBar_save">icons/sideBarPanel/sideBar_save.svg</file>
+        <file alias="process">icons/sideBarPanel/sideBar_process.svg</file>
+        <file alias="layerHeight">icons/sideBarPanel/sideBar_layerHeight.svg</file>
+        <file alias="checkmark">icons/checkmark.svg</file>
+        <file alias="precision">icons/sideBarPanel/sideBar_precision.svg</file>
+        <file alias="wall">icons/sideBarPanel/sideBar_wall.svg</file>
+        <file alias="infill">icons/sideBarPanel/sideBar_infill.svg</file>
+        <file alias="checkmark_green">icons/checkmark_green.svg</file>
+        <file alias="copy">icons/sideBarPanel/sideBar_copy.svg</file>
+        <file alias="nameEdit">icons/sideBarPanel/sideBar_edit.svg</file>
+        <file alias="delete">icons/sideBarPanel/sideBar_delete.svg</file>
+        <file alias="more">icons/sideBarPanel/sideBar_more.svg</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="MiSans_Bold">fonts/MiSans-Bold.otf</file>
+        <file alias="MiSans_Medium">fonts/MiSans-Medium.otf</file>
+        <file alias="MiSans_Regular">fonts/MiSans-Regular.otf</file>
+    </qresource>
+</RCC>

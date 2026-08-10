@@ -1,0 +1,11 @@
+.vs/
+x64/
+Debug/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.tlog
+*.lastbuildstate
+*.log
+Build/.claude/

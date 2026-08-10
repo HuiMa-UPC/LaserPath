@@ -1,0 +1,429 @@
+﻿#include "SideBarPanel.h"
+#include "Styles.h"
+#include "SectionHeader.h"
+#include "ParamRow.h"
+#include "ParamHeader.h"
+
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QIcon>
+#include <QPixmap>
+#include <QScrollArea>
+
+
+SideBarPanel::SideBarPanel(QWidget *parent)
+	: QWidget(parent)
+{
+    setAttribute(Qt::WA_StyledBackground, true);
+    setObjectName("SideBarPanel");
+    setStyleSheet(sideBarPanelQSS);
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    layout->addWidget(createDeviceCard(this));
+    layout->addWidget(createProcessCard(this));
+}
+
+#pragma region Device
+
+QWidget* SideBarPanel::createDeviceCard(QWidget* parent)
+{
+    QWidget* content = new QWidget(parent);
+    QVBoxLayout* layout = new QVBoxLayout(content);
+    layout->setAlignment(Qt::AlignCenter);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    m_deviceHeader = new SectionHeader(":/icons/device", "设备", ":/icons/settings", content);
+    m_deviceContent = createDeviceContent(content);
+    layout->addWidget(m_deviceHeader);
+    layout->addWidget(m_deviceContent);
+
+    connect(m_deviceHeader, &SectionHeader::clicked, this, [this]() {
+        if (m_deviceContent->isHidden())
+            m_deviceContent->setHidden(false);
+        else
+            m_deviceContent->setHidden(true);
+        });
+    return content;
+}
+
+QWidget* SideBarPanel::createDeviceContent(QWidget* parent)
+{
+    auto* content = new QWidget(parent);
+
+    auto* contentLayout = new QVBoxLayout(content);
+    contentLayout->setContentsMargins(10, 10,
+        10, 10);
+    contentLayout->setSpacing(0);
+
+#pragma region 设备卡片
+    auto* deviceCard = new QWidget(content);
+    deviceCard->setObjectName("DeviceCard");
+    deviceCard->setStyleSheet(deviceCardQSS);
+    deviceCard->setAttribute(Qt::WA_Hover, true);
+
+    auto* cardLayout = new QVBoxLayout(deviceCard);
+    cardLayout->setAlignment(Qt::AlignCenter);
+    cardLayout->setContentsMargins(10, 10, 10, 10);
+    cardLayout->setSpacing(0);
+
+    auto* photoLayout = new QHBoxLayout();
+    photoLayout->setContentsMargins(0, 0, 0, 0);
+    photoLayout->setSpacing(0);
+    cardLayout->addLayout(photoLayout);
+
+    QPushButton* plhBtn = new QPushButton(deviceCard);
+    plhBtn->setObjectName("IconBtn");
+    plhBtn->setStyleSheet(Styles::kIconBtn);
+    photoLayout->addWidget(plhBtn, 0, Qt::AlignTop);
+
+    photoLayout->addStretch(1);
+    m_deviceImage = new QLabel(deviceCard);
+    m_deviceImage->setAlignment(Qt::AlignCenter);
+    QPixmap devicePix(":/icons/image");
+    devicePix.setDevicePixelRatio(devicePixelRatioF());
+    m_deviceImage->setPixmap(devicePix.scaled(
+        QSize(140, 140),
+        Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    photoLayout->addWidget(m_deviceImage);
+    photoLayout->addStretch(1);
+
+    m_editBtn = new QPushButton(deviceCard);
+    m_editBtn->setObjectName("IconBtn");
+    m_editBtn->setStyleSheet(Styles::kIconBtn);
+    m_editBtn->setIcon(QIcon(":/icons/edit"));
+    photoLayout->addWidget(m_editBtn, 0, Qt::AlignTop);
+
+    m_selectBtn = new QPushButton(deviceCard);
+    m_selectBtn->setObjectName("SelectBtn");
+    m_selectBtn->setIcon(QIcon(":/icons/arrow"));
+    m_selectBtn->setText("Rongsu Laser One");
+    cardLayout->addWidget(m_selectBtn);
+
+    contentLayout->addWidget(deviceCard);
+#pragma endregion
+
+#pragma region 参数区域
+    ParamHeader* wireHeader = new ParamHeader(":/icons/wire", "焊丝", content);
+    contentLayout->addSpacing(10);
+    contentLayout->addWidget(wireHeader);
+    contentLayout->addSpacing(5);
+
+    m_diameterRow = new ParamRow("直径", "mm", 0.4, 2.0, 0.1, 1, content);
+    m_stickOutRow = new ParamRow("干伸长", "mm", 1, 20, 1, content);
+
+    contentLayout->addWidget(m_diameterRow);
+    contentLayout->addSpacing(5);
+    contentLayout->addWidget(m_stickOutRow);
+    contentLayout->addSpacing(10);
+#pragma endregion
+
+    return content;
+}
+
+#pragma endregion
+
+#pragma region Process
+
+QWidget* SideBarPanel::createProcessTopBar(QWidget* parent)
+{
+    QWidget* content = new QWidget(parent);
+    content->setObjectName("ProcessTopBar");
+    content->setStyleSheet(processTopBar + Styles::kIconBtn);
+    QHBoxLayout* layout = new QHBoxLayout(content);
+    layout->setAlignment(Qt::AlignCenter);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(5);
+
+    m_allResetBtn = new QPushButton(content);
+    m_allResetBtn->setIcon(QIcon(":/icons/reset"));
+    m_allResetBtn->setToolTip("点击以将所有设置还原到最后一次保存的版本。");
+    m_allResetBtn->setObjectName("IconBtn");
+
+    m_processSelectBtn = new QPushButton(content);
+    m_processSelectBtn->setObjectName("SelectBtn");
+    m_processSelectBtn->setIcon(QIcon(":/icons/arrow"));
+    m_processSelectBtn->setText("Rongsu Laser One Process");
+    m_processSelectBtn->setToolTip("切换选择其他工艺参数配置");
+
+    m_processSaveBtn = new QPushButton(content);
+    m_processSaveBtn->setIcon(QIcon(":/icons/sideBar_save"));
+    m_processSaveBtn->setToolTip("保存工艺配置");
+    m_processSaveBtn->setObjectName("IconBtn");
+
+    m_processMoreBtn = new QPushButton(content);
+    m_processMoreBtn->setIcon(QIcon(":/icons/more"));
+    m_processMoreBtn->setToolTip("更多");
+    m_processMoreBtn->setObjectName("IconBtn");
+
+    layout->addWidget(m_allResetBtn);
+    layout->addWidget(m_processSelectBtn, 1);
+    layout->addWidget(m_processSaveBtn);
+    layout->addWidget(m_processMoreBtn);
+
+    return content;
+}
+
+QTabBar* SideBarPanel::createProcessTapBar(QWidget* parent)
+{
+    QTabBar* tabBar = new QTabBar(parent);
+
+    tabBar->addTab(QStringLiteral("策略"));
+    tabBar->addTab(QStringLiteral("速度"));
+    tabBar->addTab(QStringLiteral("其他"));
+
+    tabBar->setExpanding(false);
+    tabBar->setStyleSheet(processTapBar);
+    return tabBar;
+}
+
+QScrollArea* SideBarPanel::createProcessStack(QWidget* parent)
+{
+    QScrollArea* scrollArea = new QScrollArea(parent);
+    scrollArea->setObjectName("PanelScroll");
+    scrollArea->setStyleSheet(panelScrollQSS);
+
+    QStackedWidget* stack = new QStackedWidget(scrollArea);
+    stack->addWidget(createStrategyPage(stack));
+    stack->addWidget(createSpeedPage(stack));
+    // 其他页占位
+    stack->addWidget(new QWidget(stack));
+    stack->setCurrentIndex(0);
+
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setWidget(stack);
+
+    return scrollArea;
+}
+
+QWidget* SideBarPanel::createStrategyPage(QWidget* parent)
+{
+    QWidget* page = new QWidget(parent);
+    auto* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(5);
+    layout->setAlignment(Qt::AlignTop);
+    // ── 切片 ──────────────────────────────
+    auto* sliceContainer = new QWidget(page);
+    auto* sliceLayout = new QVBoxLayout(sliceContainer);
+    sliceLayout->setContentsMargins(0, 0, 0, 0);
+    sliceLayout->setSpacing(5);
+
+    m_sliceTitle = new ParamHeader(":/icons/layerHeight", "切片", sliceContainer);
+    m_layerHeight = new ParamRow("层高", "mm", 0.0, 20.0, 0.1, 1, sliceContainer);
+    m_firstLayerHeight = new ParamRow("首层层高", "mm", 0.0, 20.0, 0.1, 1, sliceContainer);
+    m_autoRange = new ParamRow("自动切片范围", true, sliceContainer);
+    m_zMin = new ParamRow("Z 最小值", "mm", 0.0, 20.0, 0.1, 1, sliceContainer);
+    m_zMin->setVisible(false);
+    m_zMax = new ParamRow("Z 最大值", "mm", 0.0, 20.0, 0.1, 1, sliceContainer);
+    m_zMax->setVisible(false);
+
+    sliceLayout->addWidget(m_sliceTitle);
+    sliceLayout->addSpacing(5);
+    sliceLayout->addWidget(m_layerHeight);
+    sliceLayout->addWidget(m_firstLayerHeight);
+    sliceLayout->addWidget(m_autoRange);
+    sliceLayout->addWidget(m_zMin);
+    sliceLayout->addWidget(m_zMax);
+
+    connect(m_autoRange->checkBox(), &QCheckBox::toggled, this, [this](bool checked) {
+        m_zMin->setVisible(!checked);
+        m_zMax->setVisible(!checked);
+    });
+
+    layout->addWidget(sliceContainer);
+    layout->addSpacing(5);
+
+    // ── 精度 ──────────────────────────────
+    auto* precisionContainer = new QWidget(page);
+    auto* precisionLayout = new QVBoxLayout(precisionContainer);
+    precisionLayout->setContentsMargins(0, 0, 0, 0);
+    precisionLayout->setSpacing(5);
+
+    m_precisionTitle = new ParamHeader(":/icons/precision", "精度", precisionContainer);
+    m_minContourLen = new ParamRow("最小轮廓长度", "mm", 0.0, 20.0, 0.1, 1, precisionContainer);
+    m_collinearPrecision = new ParamRow("共线优化精度", "mm", 0.0, 20.0, 0.1, 1, precisionContainer);
+    m_gapCloseRadius = new ParamRow("间隙闭合半径", "mm", 0.0, 20.0, 0.1, 1, precisionContainer);
+
+    precisionLayout->addWidget(m_precisionTitle);
+    precisionLayout->addSpacing(5);
+    precisionLayout->addWidget(m_minContourLen);
+    precisionLayout->addWidget(m_collinearPrecision);
+    precisionLayout->addWidget(m_gapCloseRadius);
+
+    layout->addWidget(precisionContainer);
+    layout->addSpacing(5);
+
+    // ── 偏移 ──────────────────────────────
+    auto* offsetContainer = new QWidget(page);
+    auto* offsetLayout = new QVBoxLayout(offsetContainer);
+    offsetLayout->setContentsMargins(0, 0, 0, 0);
+    offsetLayout->setSpacing(5);
+
+    m_offsetTitle = new ParamHeader(":/icons/wall", "偏移", offsetContainer);
+    m_enableOffset = new ParamRow("启用偏移", true, offsetContainer);
+    m_outerWallWidth = new ParamRow("外墙宽度", "mm", 0.0, 20.0, 0.1, 1, offsetContainer);
+    m_innerWallWidth = new ParamRow("内墙宽度", "mm", 0.0, 20.0, 0.1, 1, offsetContainer);
+    m_baseContour = new ParamRow("基准轮廓", QVector<QString>{ "全轮廓", "外轮廓", "内轮廓" }, offsetContainer);
+    m_autoOffset = new ParamRow("自动偏移", false, offsetContainer);
+    m_offsetCount = new ParamRow("偏移数量", "", 0, 99999, 1, offsetContainer);
+    m_offsetContourComp = new ParamRow("偏移轮廓补偿", "mm", 0.0, 20.0, 0.1, 1, offsetContainer);
+    m_startAngle = new ParamRow("起始角度", "°", 0.0, 360.0, 0.1, 1, offsetContainer);
+    m_startPointStrategy = new ParamRow("起始变换策略",
+        QVector<QString>{ "固定起点", "按照角度", "按照长度" }, offsetContainer);
+    m_angleIncrement = new ParamRow("角度增量", "°", 0.0, 360.0, 0.1, 1, offsetContainer);
+    m_lengthIncrement = new ParamRow("长度增量", "mm", 0.0, 360.0, 0.1, 1, offsetContainer);
+
+    m_enableOffset->addDependent(m_outerWallWidth);
+    m_enableOffset->addDependent(m_innerWallWidth);
+    m_enableOffset->addDependent(m_baseContour);
+    m_enableOffset->addDependent(m_autoOffset);
+    m_enableOffset->addDependent(m_offsetContourComp);
+    m_enableOffset->addDependent(m_startAngle);
+    m_enableOffset->addDependent(m_startPointStrategy);
+    m_enableOffset->addDependent(m_offsetCount, [this] { return !m_autoOffset->checkBox()->isChecked(); });
+    m_enableOffset->addDependent(m_angleIncrement, [this] { return m_startPointStrategy->currentIndex() == 1; });
+    m_enableOffset->addDependent(m_lengthIncrement, [this] { return m_startPointStrategy->currentIndex() == 2; });
+
+    connect(m_autoOffset->checkBox(), &QCheckBox::toggled, this, [this]() {
+        m_enableOffset->refreshDependents();
+    });
+    connect(m_startPointStrategy, &ParamRow::currentIndexChanged,
+            m_enableOffset, &ParamRow::refreshDependents);
+
+    offsetLayout->addWidget(m_offsetTitle);
+    offsetLayout->addSpacing(5);
+    offsetLayout->addWidget(m_enableOffset);
+    offsetLayout->addWidget(m_outerWallWidth);
+    offsetLayout->addWidget(m_innerWallWidth);
+    offsetLayout->addWidget(m_baseContour);
+    offsetLayout->addWidget(m_autoOffset);
+    offsetLayout->addWidget(m_offsetCount);
+    offsetLayout->addWidget(m_offsetContourComp);
+    offsetLayout->addWidget(m_startAngle);
+    offsetLayout->addWidget(m_startPointStrategy);
+    offsetLayout->addWidget(m_angleIncrement);
+    offsetLayout->addWidget(m_lengthIncrement);
+
+    layout->addWidget(offsetContainer);
+    layout->addSpacing(5);
+
+    // 填充容器 — autoOffset 打开时整个填充面板隐藏
+    auto* fillContainer = new QWidget(page);
+    auto* fillLayout = new QVBoxLayout(fillContainer);
+    fillLayout->setContentsMargins(0, 0, 0, 0);
+    fillLayout->setSpacing(5);
+
+    m_fillTitle = new ParamHeader(":/icons/infill", "填充", fillContainer);
+    m_beadWidth = new ParamRow("焊道宽度", "mm", 0.0, 20.0, 0.1, 1, fillContainer);
+    m_fillType = new ParamRow("填充类型", QVector<QString>{ "直线", "往复" }, fillContainer);
+    m_adaptiveOverlap = new ParamRow("自适应搭接率", false, fillContainer);
+    m_maxOverlapRate = new ParamRow("最小搭接率", "%", 0.0, 100.0, 0.1, 1, fillContainer);
+    m_minOverlapRate = new ParamRow("最大搭接率", "%", 0.0, 100.0, 0.1, 1, fillContainer);
+    m_overlapRate = new ParamRow("搭接率", "%", 0.0, 100.0, 0.1, 1, fillContainer);
+
+    m_adaptiveOverlap->addDependent(m_maxOverlapRate);
+    m_adaptiveOverlap->addDependent(m_minOverlapRate);
+    m_adaptiveOverlap->addDependent(m_overlapRate, nullptr, true);
+
+    m_marginStrategy = new ParamRow("首尾边距策略", QVector<QString>{ "自由", "居中" }, fillContainer);
+    m_adaptiveOverlap->addDependent(m_marginStrategy, nullptr, true);
+    m_scanDirection = new ParamRow("扫描方向", QVector<QString>{ "指定角度", "沿长边", "沿短边" }, fillContainer);
+    m_scanAngle = new ParamRow("扫描角度", "°", 0.0, 360.0, 0.1, 1, fillContainer);
+
+    connect(m_scanDirection, &ParamRow::currentIndexChanged, this, [this](int index) {
+        m_scanAngle->setVisible(index == 0);
+    });
+
+    m_interlayerRotation = new ParamRow("层间旋转角度", "°", 0.0, 360.0, 0.1, 1, fillContainer);
+    m_fillAreaComp = new ParamRow("填充区域补偿", "mm", 0.0, 360.0, 0.1, 1, fillContainer);
+    m_endExtension = new ParamRow("端部延申", "mm", 0.0, 360.0, 0.1, 1, fillContainer);
+
+    fillLayout->addWidget(m_fillTitle);
+    fillLayout->addSpacing(5);
+    fillLayout->addWidget(m_beadWidth);
+    fillLayout->addWidget(m_fillType);
+    fillLayout->addWidget(m_adaptiveOverlap);
+    fillLayout->addWidget(m_maxOverlapRate);
+    fillLayout->addWidget(m_minOverlapRate);
+    fillLayout->addWidget(m_overlapRate);
+    fillLayout->addWidget(m_marginStrategy);
+    fillLayout->addWidget(m_scanDirection);
+    fillLayout->addWidget(m_scanAngle);
+    fillLayout->addWidget(m_interlayerRotation);
+    fillLayout->addWidget(m_fillAreaComp);
+    fillLayout->addWidget(m_endExtension);
+    fillLayout->addSpacing(20);
+
+    layout->addWidget(fillContainer);
+
+    // 填充面板：仅在启用偏移 && 自动偏移 同时打开时隐藏
+    auto updateFillVisible = [this, fillContainer] {
+        bool hide = m_enableOffset->checkBox()->isChecked()
+                 && m_autoOffset->checkBox()->isChecked();
+        fillContainer->setVisible(!hide);
+    };
+    connect(m_enableOffset->checkBox(), &QCheckBox::toggled, this, updateFillVisible);
+    connect(m_autoOffset->checkBox(), &QCheckBox::toggled, this, updateFillVisible);
+
+    return page;
+}
+
+QWidget* SideBarPanel::createSpeedPage(QWidget* parent)
+{
+    QWidget* page = new QWidget(parent);
+
+    return page;
+}
+
+QWidget* SideBarPanel::createProcessCard(QWidget* parent)
+{
+    QWidget* content = new QWidget(parent);
+    QVBoxLayout* layout = new QVBoxLayout(content);
+    layout->setAlignment(Qt::AlignCenter);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    m_processHeader = new SectionHeader(":/icons/process", "工艺", "", content);
+    m_processContent = createProcessContent(content);
+    layout->addWidget(m_processHeader);
+    layout->addWidget(m_processContent);
+
+    connect(m_processHeader, &SectionHeader::clicked, this, [this]() {
+        if (m_processContent->isHidden())
+            m_processContent->setHidden(false);
+        else
+            m_processContent->setHidden(true);
+        });
+    return content;
+}
+
+QWidget* SideBarPanel::createProcessContent(QWidget* parent)
+{
+    auto* content = new QWidget(parent);
+    content->setAttribute(Qt::WA_StyledBackground, true);
+    auto* contentLayout = new QVBoxLayout(content);
+    contentLayout->setContentsMargins(10, 10,
+        10, 10);
+    contentLayout->setSpacing(0);
+
+    QWidget* topBar = createProcessTopBar(content);
+    m_tapBar = createProcessTapBar(content);
+    QScrollArea* stack = createProcessStack(content);
+    contentLayout->addWidget(topBar);
+    contentLayout->addSpacing(10);
+    contentLayout->addWidget(m_tapBar);
+    contentLayout->addSpacing(10);
+    contentLayout->addWidget(stack);
+
+    return content;
+}
+
+#pragma endregion
