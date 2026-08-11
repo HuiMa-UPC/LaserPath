@@ -20,6 +20,7 @@
     <ClCompile Include="ParamRow.cpp" />
     <ClCompile Include="SectionHeader.cpp" />
     <ClCompile Include="SideBarPanel.cpp" />
+    <ClCompile Include="CustomDialog.cpp" />
     <ClCompile Include="TitleBar.cpp" />
     <ClCompile Include="TopBar.cpp" />
   </ItemGroup>
@@ -44,6 +45,7 @@
     <ClInclude Include="database\ProcessRepository.h" />
     <ClInclude Include="database\ProcessProfile.h" />
     <ClInclude Include="IDatabaseProvider.h" />
+    <QtMoc Include="CustomDialog.h" />
     <QtMoc Include="ParamHeader.h" />
     <QtMoc Include="ParamRow.h" />
     <QtMoc Include="SectionHeader.h" />

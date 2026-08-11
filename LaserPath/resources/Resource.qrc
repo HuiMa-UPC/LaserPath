@@ -31,6 +31,7 @@
         <file alias="nameEdit">icons/sideBarPanel/sideBar_edit.svg</file>
         <file alias="delete">icons/sideBarPanel/sideBar_delete.svg</file>
         <file alias="more">icons/sideBarPanel/sideBar_more.svg</file>
+        <file alias="add">icons/sideBarPanel/sideBar_add.svg</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="MiSans_Bold">fonts/MiSans-Bold.otf</file>

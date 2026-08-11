@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <QWidget>
 #include <QString>
@@ -45,10 +45,10 @@ private:
 	QPushButton* m_allResetBtn = nullptr;
 	QPushButton* m_processSelectBtn = nullptr;
 	QPushButton* m_processSaveBtn = nullptr;
-	QPushButton* m_processMoreBtn = nullptr;
-
+	QPushButton* m_processAddBtn = nullptr;
+	QPushButton* m_processRenameBtn = nullptr;
+	QPushButton* m_processDeleteBtn = nullptr;
 	ProcessRepository* m_processRepo = nullptr;
-	QMenu* m_processMoreMenu = nullptr;
 	QMenu* m_processSelectMenu = nullptr;
 	int m_currentProfileId = 0;
 
@@ -158,12 +158,37 @@ QPushButton#SelectBtn {
 	border-radius: 0px;
 	min-height: 25px;
 	max-height: 25px;
+    text-align: left;
+	padding-left: 6px;
+	padding-right: 6px;
 }
 QPushButton#SelectBtn:hover {
-	background: transparent;
 	border: 1px solid #00AE42;
-	border-radius: 0px;
 }
+		QMenu {
+			background: #FFFFFF;
+			border: 1px solid #D0D0D0;
+			padding: 0px 2px;
+		}
+		QMenu::item {
+			padding: 6px 24px 6px 6px;
+			min-width: 265px;
+			max-width: 265px;
+		}
+		QMenu::item:selected {
+			border: 1px solid #00AE42;
+		}
+		QMenu::item:checked {
+			background: #EDFAF2;
+		}
+		QMenu::indicator {
+			width: 14px;
+			height: 14px;
+			margin-left: 6px;
+		}
+		QMenu::indicator:checked {
+			image: url(:/icons/checkmark_green);
+		}
 )";
 	const QString processTapBar = R"(
         QTabBar {
@@ -246,7 +271,6 @@ QScrollArea#PanelScroll QScrollBar::sub-page:vertical {
 
 	void refreshProcessList();
 	void loadFromProfile(const ProcessProfile& p);
-	void markAllSaved();
 	void setupModifiedCallbacks();
 	void updateAllResetState();
 

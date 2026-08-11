@@ -13,6 +13,16 @@ ProcessRepository::ProcessRepository(IDatabaseProvider& provider)
 {
 }
 
+QList<QPair<int, QString>> ProcessRepository::listAllName() const
+{
+    QList<QPair<int, QString>> result;
+    QSqlQuery q(m_provider.db());
+    q.exec(QString("SELECT id, name FROM %1 ORDER BY id").arg(kTable));
+    while (q.next())
+        result.append({q.value(0).toInt(), q.value(1).toString()});
+    return result;
+}
+
 /************************ Row mapping（读取） ************************/
 ProcessProfile ProcessRepository::profileFromQuery(const QSqlQuery& q)
 {

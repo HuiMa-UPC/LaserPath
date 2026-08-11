@@ -56,7 +56,7 @@ public:
 	void addDependent(QWidget* widget, std::function<bool()> condition = nullptr, bool invert = false);
 	void refreshDependents();
 
-	void markSaved();
+	void setDbValue(const QVariant& v);
 	void revertToSaved();
 	bool isModified() const;
 	void setModifiedCallback(std::function<void()> cb);
@@ -82,7 +82,7 @@ private:
 	int m_currentIndex = 0;
 	QVector<Dependent> m_dependents;
 	QVector<QString> m_items;
-	QVariant m_savedValue;
+	QVariant m_dbValue;
 	std::function<void()> m_modifiedCallback;
 
 	bool m_isDouble = false;

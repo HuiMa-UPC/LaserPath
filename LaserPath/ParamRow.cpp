@@ -360,29 +360,29 @@ void ParamRow::setValueTo(const QVariant& v)
 
 void ParamRow::updateUndoVisibility()
 {
-	bool modified = m_savedValue.isValid() && currentValue() != m_savedValue;
+	bool modified = m_dbValue.isValid() && currentValue() != m_dbValue;
 	m_undoBtn->setIcon(modified ? QIcon(":/icons/reset") : QIcon());
 	m_undoBtn->setEnabled(modified);
 	if (m_modifiedCallback)
 		m_modifiedCallback();
 }
 
-void ParamRow::markSaved()
+void ParamRow::setDbValue(const QVariant& v)
 {
-	m_savedValue = currentValue();
-	m_undoBtn->setIcon(QIcon());
-	m_undoBtn->setEnabled(false);
+	m_dbValue = v;
+	setValueTo(v);
+	updateUndoVisibility();
 }
 
 void ParamRow::revertToSaved()
 {
-	if (!m_savedValue.isValid()) return;
-	setValueTo(m_savedValue);
+	if (!m_dbValue.isValid()) return;
+	setValueTo(m_dbValue);
 }
 
 bool ParamRow::isModified() const
 {
-	return m_savedValue.isValid() && currentValue() != m_savedValue;
+	return m_dbValue.isValid() && currentValue() != m_dbValue;
 }
 
 void ParamRow::setModifiedCallback(std::function<void()> cb)
