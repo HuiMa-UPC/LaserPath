@@ -9,7 +9,7 @@ class QSqlQuery;
 class ProcessRepository {
 public:
     explicit ProcessRepository(IDatabaseProvider& provider);
-
+    //QList<QString> listAllName() const;
     QList<ProcessProfile> listAll() const;
     ProcessProfile        getById(int id) const;
     bool                  save(ProcessProfile& profile);

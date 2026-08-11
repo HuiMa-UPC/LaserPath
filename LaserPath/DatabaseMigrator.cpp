@@ -48,8 +48,17 @@ static const QList<Migration> kMigrations = {
       "  scan_angle            REAL    DEFAULT 0.0,"
       "  interlayer_rotation   REAL    DEFAULT 0.0,"
       "  fill_area_comp        REAL    DEFAULT 0.0,"
-      "  end_extension         REAL    DEFAULT 0.0"
-      ")" },
+      "  end_extension         REAL    DEFAULT 0.0,"
+      "  created_at            TEXT,"
+      "  updated_at            TEXT"
+      ");"
+      "INSERT INTO process_profiles (name)"
+      "  SELECT '默认工艺'"
+      "  WHERE NOT EXISTS (SELECT 1 FROM process_profiles)" },
+
+    { 2, "Add created_at and updated_at columns to process_profiles",
+      "ALTER TABLE process_profiles ADD COLUMN created_at TEXT;"
+      "ALTER TABLE process_profiles ADD COLUMN updated_at TEXT" },
 
 };
 
@@ -178,8 +187,15 @@ bool DatabaseMigrator::applyMigration(const Migration& m)
             continue;
 
         if (!q.exec(trimmed)) {
+            QString err = q.lastError().text();
+            // 幂等处理: 列/表已存在时跳过，不视为错误
+            if (err.contains(QStringLiteral("duplicate column"), Qt::CaseInsensitive) ||
+                err.contains(QStringLiteral("already exists"), Qt::CaseInsensitive)) {
+                qInfo() << "DatabaseMigrator: skipping (already exists) —" << trimmed;
+                continue;
+            }
             qWarning() << "DatabaseMigrator: migration v" << m.version
-                << "failed —" << q.lastError().text()
+                << "failed —" << err
                 << "\n  SQL:" << trimmed;
             return false;
         }

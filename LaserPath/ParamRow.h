@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <QWidget>
 #include <QPushButton>
@@ -8,6 +8,7 @@
 #include <QCheckBox>
 #include <QVector>
 #include <functional>
+#include <QVariant>
 
 class QMenu;
 
@@ -48,13 +49,22 @@ public:
 	QMenu* menu() const { return m_menu; }
 
 	int currentIndex() const { return m_currentIndex; }
+	void setCurrentIndex(int index);
 
 	QString currentText() const { return m_combBtn ? m_combBtn->text() : QString(); }
 
 	void addDependent(QWidget* widget, std::function<bool()> condition = nullptr, bool invert = false);
 	void refreshDependents();
 
+	void markSaved();
+	void revertToSaved();
+	bool isModified() const;
+	void setModifiedCallback(std::function<void()> cb);
+
 private:
+	QVariant currentValue() const;
+	void setValueTo(const QVariant& v);
+	void updateUndoVisibility();
 	void buildParamRow(const QString& name, const QString& suffix);
 
 	void initCommon(const QString& name);
@@ -72,6 +82,8 @@ private:
 	int m_currentIndex = 0;
 	QVector<Dependent> m_dependents;
 	QVector<QString> m_items;
+	QVariant m_savedValue;
+	std::function<void()> m_modifiedCallback;
 
 	bool m_isDouble = false;
 };

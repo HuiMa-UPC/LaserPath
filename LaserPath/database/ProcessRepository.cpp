@@ -64,52 +64,86 @@ ProcessProfile ProcessRepository::profileFromQuery(const QSqlQuery& q)
     return p;
 }
 
-/************************** 写入 binding **************************/
-static void bindProfileValues(QSqlQuery& q, const ProcessProfile& p)
+/************************** 写入 binding（INSERT） **************************/
+static void bindInsertValues(QSqlQuery& q, const ProcessProfile& p)
 {
-    q.bindValue(":name",                p.name);
-
+    q.bindValue(0,  p.name);
     // 切片
-    q.bindValue(":layer_height",        p.layerHeight);
-    q.bindValue(":first_layer_height",  p.firstLayerHeight);
-    q.bindValue(":auto_range",          p.autoRange);
-    q.bindValue(":z_min",               p.zMin);
-    q.bindValue(":z_max",               p.zMax);
-
+    q.bindValue(1,  p.layerHeight);
+    q.bindValue(2,  p.firstLayerHeight);
+    q.bindValue(3,  p.autoRange);
+    q.bindValue(4,  p.zMin);
+    q.bindValue(5,  p.zMax);
     // 精度
-    q.bindValue(":min_contour_len",     p.minContourLen);
-    q.bindValue(":collinear_precision", p.collinearPrecision);
-    q.bindValue(":gap_close_radius",    p.gapCloseRadius);
-
+    q.bindValue(6,  p.minContourLen);
+    q.bindValue(7,  p.collinearPrecision);
+    q.bindValue(8,  p.gapCloseRadius);
     // 偏移
-    q.bindValue(":enable_offset",       p.enableOffset);
-    q.bindValue(":outer_wall_width",    p.outerWallWidth);
-    q.bindValue(":inner_wall_width",    p.innerWallWidth);
-    q.bindValue(":base_contour",        p.baseContour);
-    q.bindValue(":auto_offset",         p.autoOffset);
-    q.bindValue(":offset_count",        p.offsetCount);
-    q.bindValue(":offset_contour_comp", p.offsetContourComp);
-    q.bindValue(":start_angle",         p.startAngle);
-    q.bindValue(":start_point_strategy", p.startPointStrategy);
-    q.bindValue(":angle_increment",     p.angleIncrement);
-    q.bindValue(":length_increment",    p.lengthIncrement);
-
+    q.bindValue(9,  p.enableOffset);
+    q.bindValue(10, p.outerWallWidth);
+    q.bindValue(11, p.innerWallWidth);
+    q.bindValue(12, p.baseContour);
+    q.bindValue(13, p.autoOffset);
+    q.bindValue(14, p.offsetCount);
+    q.bindValue(15, p.offsetContourComp);
+    q.bindValue(16, p.startAngle);
+    q.bindValue(17, p.startPointStrategy);
+    q.bindValue(18, p.angleIncrement);
+    q.bindValue(19, p.lengthIncrement);
     // 填充
-    q.bindValue(":bead_width",          p.beadWidth);
-    q.bindValue(":fill_type",           p.fillType);
-    q.bindValue(":adaptive_overlap",    p.adaptiveOverlap);
-    q.bindValue(":max_overlap_rate",    p.maxOverlapRate);
-    q.bindValue(":min_overlap_rate",    p.minOverlapRate);
-    q.bindValue(":overlap_rate",        p.overlapRate);
-    q.bindValue(":margin_strategy",     p.marginStrategy);
-    q.bindValue(":scan_direction",      p.scanDirection);
-    q.bindValue(":scan_angle",          p.scanAngle);
-    q.bindValue(":interlayer_rotation", p.interlayerRotation);
-    q.bindValue(":fill_area_comp",      p.fillAreaComp);
-    q.bindValue(":end_extension",       p.endExtension);
+    q.bindValue(20, p.beadWidth);
+    q.bindValue(21, p.fillType);
+    q.bindValue(22, p.adaptiveOverlap);
+    q.bindValue(23, p.maxOverlapRate);
+    q.bindValue(24, p.minOverlapRate);
+    q.bindValue(25, p.overlapRate);
+    q.bindValue(26, p.marginStrategy);
+    q.bindValue(27, p.scanDirection);
+    q.bindValue(28, p.scanAngle);
+    q.bindValue(29, p.interlayerRotation);
+    q.bindValue(30, p.fillAreaComp);
+    q.bindValue(31, p.endExtension);
+    q.bindValue(32, p.createdAt);
+    q.bindValue(33, p.updatedAt);
+}
 
-    q.bindValue(":created_at",          p.createdAt);
-    q.bindValue(":updated_at",          p.updatedAt);
+/************************** 写入 binding（UPDATE） **************************/
+static void bindUpdateValues(QSqlQuery& q, const ProcessProfile& p)
+{
+    q.bindValue(0,  p.name);
+    q.bindValue(1,  p.layerHeight);
+    q.bindValue(2,  p.firstLayerHeight);
+    q.bindValue(3,  p.autoRange);
+    q.bindValue(4,  p.zMin);
+    q.bindValue(5,  p.zMax);
+    q.bindValue(6,  p.minContourLen);
+    q.bindValue(7,  p.collinearPrecision);
+    q.bindValue(8,  p.gapCloseRadius);
+    q.bindValue(9,  p.enableOffset);
+    q.bindValue(10, p.outerWallWidth);
+    q.bindValue(11, p.innerWallWidth);
+    q.bindValue(12, p.baseContour);
+    q.bindValue(13, p.autoOffset);
+    q.bindValue(14, p.offsetCount);
+    q.bindValue(15, p.offsetContourComp);
+    q.bindValue(16, p.startAngle);
+    q.bindValue(17, p.startPointStrategy);
+    q.bindValue(18, p.angleIncrement);
+    q.bindValue(19, p.lengthIncrement);
+    q.bindValue(20, p.beadWidth);
+    q.bindValue(21, p.fillType);
+    q.bindValue(22, p.adaptiveOverlap);
+    q.bindValue(23, p.maxOverlapRate);
+    q.bindValue(24, p.minOverlapRate);
+    q.bindValue(25, p.overlapRate);
+    q.bindValue(26, p.marginStrategy);
+    q.bindValue(27, p.scanDirection);
+    q.bindValue(28, p.scanAngle);
+    q.bindValue(29, p.interlayerRotation);
+    q.bindValue(30, p.fillAreaComp);
+    q.bindValue(31, p.endExtension);
+    q.bindValue(32, p.updatedAt);
+    q.bindValue(33, p.id);
 }
 
 /************************** 获取全部 **************************/
@@ -140,69 +174,70 @@ bool ProcessRepository::save(ProcessProfile& profile)
     QSqlQuery q(m_provider.db());
     QString now = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
 
+    bool prepared = false;
     if (profile.id == 0) {
-        // INSERT
+        // INSERT — 34 个 ?
         profile.createdAt = now;
-        q.prepare(QString(
-            "INSERT INTO %1 ("
-            "  name,"
-            "  layer_height, first_layer_height, auto_range, z_min, z_max,"
-            "  min_contour_len, collinear_precision, gap_close_radius,"
-            "  enable_offset, outer_wall_width, inner_wall_width, base_contour,"
-            "  auto_offset, offset_count, offset_contour_comp, start_angle,"
-            "  start_point_strategy, angle_increment, length_increment,"
-            "  bead_width, fill_type, adaptive_overlap,"
-            "  max_overlap_rate, min_overlap_rate, overlap_rate,"
-            "  margin_strategy, scan_direction, scan_angle,"
-            "  interlayer_rotation, fill_area_comp, end_extension,"
-            "  created_at, updated_at"
-            ") VALUES ("
-            "  :name,"
-            "  :layer_height, :first_layer_height, :auto_range, :z_min, :z_max,"
-            "  :min_contour_len, :collinear_precision, :gap_close_radius,"
-            "  :enable_offset, :outer_wall_width, :inner_wall_width, :base_contour,"
-            "  :auto_offset, :offset_count, :offset_contour_comp, :start_angle,"
-            "  :start_point_strategy, :angle_increment, :length_increment,"
-            "  :bead_width, :fill_type, :adaptive_overlap,"
-            "  :max_overlap_rate, :min_overlap_rate, :overlap_rate,"
-            "  :margin_strategy, :scan_direction, :scan_angle,"
-            "  :interlayer_rotation, :fill_area_comp, :end_extension,"
-            "  :created_at, :updated_at"
+        prepared = q.prepare(QString(
+            "INSERT INTO %1 (name,"
+            " layer_height, first_layer_height, auto_range, z_min, z_max,"
+            " min_contour_len, collinear_precision, gap_close_radius,"
+            " enable_offset, outer_wall_width, inner_wall_width, base_contour,"
+            " auto_offset, offset_count, offset_contour_comp, start_angle,"
+            " start_point_strategy, angle_increment, length_increment,"
+            " bead_width, fill_type, adaptive_overlap,"
+            " max_overlap_rate, min_overlap_rate, overlap_rate,"
+            " margin_strategy, scan_direction, scan_angle,"
+            " interlayer_rotation, fill_area_comp, end_extension,"
+            " created_at, updated_at)"
+            " VALUES ("
+            " ?,?,?,?,?,?,?,?,?,?,"
+            " ?,?,?,?,?,?,?,?,?,?,"
+            " ?,?,?,?,?,?,?,?,?,?,"
+            " ?,?,?,?"
             ")"
         ).arg(kTable));
     }
     else {
-        // UPDATE
-        q.prepare(QString(
-            "UPDATE %1 SET "
-            "  name=:name,"
-            "  layer_height=:layer_height, first_layer_height=:first_layer_height,"
-            "  auto_range=:auto_range, z_min=:z_min, z_max=:z_max,"
-            "  min_contour_len=:min_contour_len, collinear_precision=:collinear_precision,"
-            "  gap_close_radius=:gap_close_radius,"
-            "  enable_offset=:enable_offset, outer_wall_width=:outer_wall_width,"
-            "  inner_wall_width=:inner_wall_width, base_contour=:base_contour,"
-            "  auto_offset=:auto_offset, offset_count=:offset_count,"
-            "  offset_contour_comp=:offset_contour_comp, start_angle=:start_angle,"
-            "  start_point_strategy=:start_point_strategy, angle_increment=:angle_increment,"
-            "  length_increment=:length_increment,"
-            "  bead_width=:bead_width, fill_type=:fill_type,"
-            "  adaptive_overlap=:adaptive_overlap, max_overlap_rate=:max_overlap_rate,"
-            "  min_overlap_rate=:min_overlap_rate, overlap_rate=:overlap_rate,"
-            "  margin_strategy=:margin_strategy, scan_direction=:scan_direction,"
-            "  scan_angle=:scan_angle, interlayer_rotation=:interlayer_rotation,"
-            "  fill_area_comp=:fill_area_comp, end_extension=:end_extension,"
-            "  updated_at=:updated_at"
-            " WHERE id=:id"
+        // UPDATE — 33 个字段 + id
+        prepared = q.prepare(QString(
+            "UPDATE %1 SET"
+            " name=?, layer_height=?, first_layer_height=?,"
+            " auto_range=?, z_min=?, z_max=?,"
+            " min_contour_len=?, collinear_precision=?, gap_close_radius=?,"
+            " enable_offset=?, outer_wall_width=?, inner_wall_width=?,"
+            " base_contour=?, auto_offset=?, offset_count=?,"
+            " offset_contour_comp=?, start_angle=?,"
+            " start_point_strategy=?, angle_increment=?, length_increment=?,"
+            " bead_width=?, fill_type=?, adaptive_overlap=?,"
+            " max_overlap_rate=?, min_overlap_rate=?, overlap_rate=?,"
+            " margin_strategy=?, scan_direction=?, scan_angle=?,"
+            " interlayer_rotation=?, fill_area_comp=?, end_extension=?,"
+            " updated_at=?"
+            " WHERE id=?"
         ).arg(kTable));
-        q.bindValue(":id", profile.id);
     }
+
+    if (!prepared) {
+        qWarning() << "ProcessRepository::save prepare failed:" << q.lastError().text();
+        return false;
+    }
+
     profile.updatedAt = now;
 
-    bindProfileValues(q, profile);
+    if (profile.id == 0)
+        bindInsertValues(q, profile);
+    else
+        bindUpdateValues(q, profile);
+
+    // DEBUG: 打印 SQL 和绑定参数数量
+    qDebug() << "=== ProcessRepository::save ===";
+    qDebug() << "  Mode:" << (profile.id == 0 ? "INSERT" : "UPDATE");
+    qDebug() << "  SQL:" << q.lastQuery();
+    qDebug() << "  Bound values count:" << q.boundValues().size();
 
     if (!q.exec()) {
-        qWarning() << "ProcessRepository::save failed:" << q.lastError().text();
+        qWarning() << "ProcessRepository::save exec failed:" << q.lastError().text();
         return false;
     }
 

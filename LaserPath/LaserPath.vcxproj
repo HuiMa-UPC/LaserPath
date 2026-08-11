@@ -44,7 +44,6 @@
     <ClInclude Include="database\ProcessRepository.h" />
     <ClInclude Include="database\ProcessProfile.h" />
     <ClInclude Include="IDatabaseProvider.h" />
-    <ClInclude Include="ProcessProfile.h" />
     <QtMoc Include="ParamHeader.h" />
     <QtMoc Include="ParamRow.h" />
     <QtMoc Include="SectionHeader.h" />

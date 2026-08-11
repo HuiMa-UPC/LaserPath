@@ -84,9 +84,6 @@
     </QtRcc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ProcessProfile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Styles.h">
       <Filter>Header Files</Filter>
     </ClInclude>

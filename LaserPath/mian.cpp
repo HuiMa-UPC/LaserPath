@@ -1,5 +1,6 @@
 ﻿#include <QApplication>
 #include "MainWindow.h"
+#include "database/DatabaseManager.h"
 #include <QFont>
 #include <QFontDatabase>
 #include <QDebug>
@@ -30,7 +31,9 @@ int main(int argc, char* argv[]) {
     globalFont.setStyleHint(QFont::SansSerif);
     app.setFont(globalFont);
 
-	MainWindow mianWindow;
+    DatabaseManager::instance().init("laserpath.db");
+
+    MainWindow mianWindow;
 
 	mianWindow.show();
 

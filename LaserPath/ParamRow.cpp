@@ -1,4 +1,4 @@
-﻿#include "ParamRow.h"
+#include "ParamRow.h"
 #include "Styles.h"
 
 #include <QHBoxLayout>
@@ -128,6 +128,8 @@ ParamRow::ParamRow(const QString& name, const QString& suffix,
 	spinBox->setRange(min, max);
 	m_spinBox = spinBox;
 	buildParamRow(name, suffix);
+	connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+	        this, [this](){ updateUndoVisibility(); });
 }
 
 ParamRow::ParamRow(const QString& name, const QString& suffix,
@@ -140,6 +142,8 @@ ParamRow::ParamRow(const QString& name, const QString& suffix,
 	spinBox->setRange(min, max);
 	m_spinBox = spinBox;
 	buildParamRow(name, suffix);
+	connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+	        this, [this](){ updateUndoVisibility(); });
 }
 
 ParamRow::ParamRow(const QString& name, bool check, QWidget* parent): QWidget(parent)
@@ -150,6 +154,7 @@ ParamRow::ParamRow(const QString& name, bool check, QWidget* parent): QWidget(pa
 	m_checkBox->setChecked(check);
 
 	connect(m_checkBox, &QCheckBox::toggled, this, &ParamRow::applyDependents);
+	connect(m_checkBox, &QCheckBox::toggled, this, [this](){ updateUndoVisibility(); });
 
 	auto* rowLayout = static_cast<QHBoxLayout*>(layout());
 	rowLayout->addWidget(m_checkBox);
@@ -179,6 +184,7 @@ ParamRow::ParamRow(const QString& name, const QVector<QString>& list, QWidget* p
 			for (int j = 0; j < m_menu->actions().size(); ++j)
 				m_menu->actions().at(j)->setChecked(j == i);
 			emit currentIndexChanged(i);
+			updateUndoVisibility();
 		});
 	}
 	m_menu->actions().first()->setChecked(true);
@@ -198,6 +204,18 @@ ParamRow::ParamRow(const QString& name, const QVector<QString>& list, QWidget* p
 	rowLayout->addWidget(m_combBtn);
 }
 
+void ParamRow::setCurrentIndex(int index)
+{
+	if (!m_combBtn || index < 0 || index >= m_items.size())
+		return;
+	m_currentIndex = index;
+	m_combBtn->setText(m_items.at(index));
+	const auto actions = m_menu->actions();
+	for (int j = 0; j < actions.size(); ++j)
+		actions.at(j)->setChecked(j == index);
+	emit currentIndexChanged(index);
+}
+
 void ParamRow::initCommon(const QString& name)
 {
 	setAttribute(Qt::WA_StyledBackground, true);
@@ -214,10 +232,12 @@ void ParamRow::initCommon(const QString& name)
 	rowLayout->addWidget(nameLabel);
 
 	m_undoBtn = new QPushButton(this);
-	m_undoBtn->setIcon(QIcon(":/icons/reset"));
+	m_undoBtn->setIcon(QIcon());
 	m_undoBtn->setObjectName("IconBtn");
 	m_undoBtn->setToolTip("点击该图标，丢弃当前的修改，恢复到上次保存的数值。");
 	m_undoBtn->installEventFilter(this);
+	m_undoBtn->setEnabled(false);
+	connect(m_undoBtn, &QPushButton::clicked, this, &ParamRow::revertToSaved);
 	rowLayout->addWidget(m_undoBtn);
 
 	rowLayout->addSpacing(5);
@@ -299,4 +319,73 @@ bool ParamRow::eventFilter(QObject* obj, QEvent* event)
 	}
 
 	return QWidget::eventFilter(obj, event);
+}
+
+QVariant ParamRow::currentValue() const
+{
+	if (m_checkBox)
+		return m_checkBox->isChecked();
+	if (m_combBtn)
+		return m_currentIndex;
+	if (m_spinBox) {
+		if (auto* d = qobject_cast<QDoubleSpinBox*>(m_spinBox))
+			return d->value();
+		if (auto* s = qobject_cast<QSpinBox*>(m_spinBox))
+			return s->value();
+	}
+	return {};
+}
+
+void ParamRow::setValueTo(const QVariant& v)
+{
+	if (m_checkBox) {
+		m_checkBox->setChecked(v.toBool());
+		return;
+	}
+	if (m_combBtn && v.toInt() >= 0 && v.toInt() < m_items.size()) {
+		setCurrentIndex(v.toInt());
+		return;
+	}
+	if (m_spinBox) {
+		if (auto* d = qobject_cast<QDoubleSpinBox*>(m_spinBox)) {
+			d->setValue(v.toDouble());
+			return;
+		}
+		if (auto* s = qobject_cast<QSpinBox*>(m_spinBox)) {
+			s->setValue(v.toInt());
+			return;
+		}
+	}
+}
+
+void ParamRow::updateUndoVisibility()
+{
+	bool modified = m_savedValue.isValid() && currentValue() != m_savedValue;
+	m_undoBtn->setIcon(modified ? QIcon(":/icons/reset") : QIcon());
+	m_undoBtn->setEnabled(modified);
+	if (m_modifiedCallback)
+		m_modifiedCallback();
+}
+
+void ParamRow::markSaved()
+{
+	m_savedValue = currentValue();
+	m_undoBtn->setIcon(QIcon());
+	m_undoBtn->setEnabled(false);
+}
+
+void ParamRow::revertToSaved()
+{
+	if (!m_savedValue.isValid()) return;
+	setValueTo(m_savedValue);
+}
+
+bool ParamRow::isModified() const
+{
+	return m_savedValue.isValid() && currentValue() != m_savedValue;
+}
+
+void ParamRow::setModifiedCallback(std::function<void()> cb)
+{
+	m_modifiedCallback = std::move(cb);
 }

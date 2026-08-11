@@ -3,6 +3,7 @@
 #include "SectionHeader.h"
 #include "ParamRow.h"
 #include "ParamHeader.h"
+#include "database/ProcessRepository.h"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -10,10 +11,17 @@
 #include <QIcon>
 #include <QPixmap>
 #include <QScrollArea>
+#include <QMenu>
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
+#include <QDebug>
 
 
-SideBarPanel::SideBarPanel(QWidget *parent)
+SideBarPanel::SideBarPanel(ProcessRepository* repo, QWidget *parent)
 	: QWidget(parent)
+	, m_processRepo(repo)
 {
     setAttribute(Qt::WA_StyledBackground, true);
     setObjectName("SideBarPanel");
@@ -25,6 +33,8 @@ SideBarPanel::SideBarPanel(QWidget *parent)
 
     layout->addWidget(createDeviceCard(this));
     layout->addWidget(createProcessCard(this));
+
+    setupModifiedCallbacks();
 }
 
 #pragma region Device
@@ -140,9 +150,16 @@ QWidget* SideBarPanel::createProcessTopBar(QWidget* parent)
     layout->setSpacing(5);
 
     m_allResetBtn = new QPushButton(content);
-    m_allResetBtn->setIcon(QIcon(":/icons/reset"));
+    m_allResetBtn->setIcon(QIcon());
     m_allResetBtn->setToolTip("点击以将所有设置还原到最后一次保存的版本。");
     m_allResetBtn->setObjectName("IconBtn");
+    m_allResetBtn->setEnabled(false);
+    connect(m_allResetBtn, &QPushButton::clicked, this, [this]() {
+        if (m_currentProfileId == 0) return;
+        ProcessProfile profile = m_processRepo->getById(m_currentProfileId);
+        if (profile.id == 0) return;
+        loadFromProfile(profile);
+    });
 
     m_processSelectBtn = new QPushButton(content);
     m_processSelectBtn->setObjectName("SelectBtn");
@@ -154,16 +171,51 @@ QWidget* SideBarPanel::createProcessTopBar(QWidget* parent)
     m_processSaveBtn->setIcon(QIcon(":/icons/sideBar_save"));
     m_processSaveBtn->setToolTip("保存工艺配置");
     m_processSaveBtn->setObjectName("IconBtn");
+    connect(m_processSaveBtn, &QPushButton::clicked, this, &SideBarPanel::onSaveProcess);
 
     m_processMoreBtn = new QPushButton(content);
     m_processMoreBtn->setIcon(QIcon(":/icons/more"));
     m_processMoreBtn->setToolTip("更多");
     m_processMoreBtn->setObjectName("IconBtn");
 
+    // more 菜单
+    m_processMoreMenu = new QMenu(m_processMoreBtn);
+    QAction* newAct = m_processMoreMenu->addAction(QStringLiteral("新建工艺"));
+    QAction* renameAct = m_processMoreMenu->addAction(QStringLiteral("编辑名称"));
+    QAction* delAct = m_processMoreMenu->addAction(QStringLiteral("删除工艺"));
+    connect(newAct, SIGNAL(triggered()), this, SLOT(onNewProcess()));
+    connect(renameAct, SIGNAL(triggered()), this, SLOT(onRenameProcess()));
+    connect(delAct, SIGNAL(triggered()), this, SLOT(onDeleteProcess()));
+
+    connect(m_processMoreBtn, &QPushButton::clicked, this, [this]() {
+        qDebug() << "m_processMoreBtn clicked";
+        QPoint pos = m_processMoreBtn->mapToGlobal(
+            QPoint(0, m_processMoreBtn->height()));
+        m_processMoreMenu->exec(pos);
+    });
+
+    // 工艺选择下拉
+    connect(m_processSelectBtn, &QPushButton::clicked, this, [this]() {
+        qDebug() << "m_processSelectBtn clicked, m_processRepo =" << m_processRepo;
+        if (!m_processRepo) return;
+        refreshProcessList();
+        if (m_processSelectMenu) {
+            qDebug() << "showing select menu with" << m_processSelectMenu->actions().size() << "items";
+            QPoint pos = m_processSelectBtn->mapToGlobal(
+                QPoint(0, m_processSelectBtn->height()));
+            m_processSelectMenu->exec(pos);
+        } else {
+            qDebug() << "m_processSelectMenu is null";
+        }
+    });
+
     layout->addWidget(m_allResetBtn);
     layout->addWidget(m_processSelectBtn, 1);
     layout->addWidget(m_processSaveBtn);
     layout->addWidget(m_processMoreBtn);
+
+    // 首次加载工艺列表
+    refreshProcessList();
 
     return content;
 }
@@ -427,3 +479,301 @@ QWidget* SideBarPanel::createProcessContent(QWidget* parent)
 }
 
 #pragma endregion
+
+/************************** 工艺相关 **************************/
+
+void SideBarPanel::refreshProcessList()
+{
+    auto profiles = m_processRepo->listAll();
+
+    // 重建菜单
+    delete m_processSelectMenu;
+    m_processSelectMenu = new QMenu(m_processSelectBtn);
+
+    if (profiles.isEmpty()) {
+        m_processSelectBtn->setText(QStringLiteral("(无工艺)"));
+        m_processSelectMenu->addAction(QStringLiteral("(无工艺，请新建)"))->setEnabled(false);
+        m_currentProfileId = 0;
+        return;
+    }
+
+    for (const auto& p : profiles) {
+        QAction* act = m_processSelectMenu->addAction(p.name);
+        connect(act, &QAction::triggered, this, [this, id = p.id]() {
+            m_currentProfileId = id;
+            ProcessProfile profile = m_processRepo->getById(id);
+            m_processSelectBtn->setText(profile.name);
+            loadFromProfile(profile);
+        });
+    }
+
+    // 更新按钮文本
+    if (m_currentProfileId > 0) {
+        m_processSelectBtn->setText(m_processRepo->getById(m_currentProfileId).name);
+    } else {
+        m_processSelectBtn->setText(QStringLiteral("选择工艺..."));
+    }
+}
+
+void SideBarPanel::loadFromProfile(const ProcessProfile& p)
+{
+    // === 切片 ===
+    qobject_cast<QDoubleSpinBox*>(m_layerHeight->spinBox())->setValue(p.layerHeight);
+    qobject_cast<QDoubleSpinBox*>(m_firstLayerHeight->spinBox())->setValue(p.firstLayerHeight);
+    m_autoRange->checkBox()->setChecked(p.autoRange);
+    qobject_cast<QDoubleSpinBox*>(m_zMin->spinBox())->setValue(p.zMin);
+    qobject_cast<QDoubleSpinBox*>(m_zMax->spinBox())->setValue(p.zMax);
+
+    // === 精度 ===
+    qobject_cast<QDoubleSpinBox*>(m_minContourLen->spinBox())->setValue(p.minContourLen);
+    qobject_cast<QDoubleSpinBox*>(m_collinearPrecision->spinBox())->setValue(p.collinearPrecision);
+    qobject_cast<QDoubleSpinBox*>(m_gapCloseRadius->spinBox())->setValue(p.gapCloseRadius);
+
+    // === 偏移 ===
+    m_enableOffset->checkBox()->setChecked(p.enableOffset);
+    qobject_cast<QDoubleSpinBox*>(m_outerWallWidth->spinBox())->setValue(p.outerWallWidth);
+    qobject_cast<QDoubleSpinBox*>(m_innerWallWidth->spinBox())->setValue(p.innerWallWidth);
+    m_baseContour->setCurrentIndex(p.baseContour);
+    m_autoOffset->checkBox()->setChecked(p.autoOffset);
+    qobject_cast<QSpinBox*>(m_offsetCount->spinBox())->setValue(p.offsetCount);
+    qobject_cast<QDoubleSpinBox*>(m_offsetContourComp->spinBox())->setValue(p.offsetContourComp);
+    qobject_cast<QDoubleSpinBox*>(m_startAngle->spinBox())->setValue(p.startAngle);
+    m_startPointStrategy->setCurrentIndex(p.startPointStrategy);
+    qobject_cast<QDoubleSpinBox*>(m_angleIncrement->spinBox())->setValue(p.angleIncrement);
+    qobject_cast<QDoubleSpinBox*>(m_lengthIncrement->spinBox())->setValue(p.lengthIncrement);
+
+    // === 填充 ===
+    qobject_cast<QDoubleSpinBox*>(m_beadWidth->spinBox())->setValue(p.beadWidth);
+    m_fillType->setCurrentIndex(p.fillType);
+    m_adaptiveOverlap->checkBox()->setChecked(p.adaptiveOverlap);
+    qobject_cast<QDoubleSpinBox*>(m_maxOverlapRate->spinBox())->setValue(p.maxOverlapRate);
+    qobject_cast<QDoubleSpinBox*>(m_minOverlapRate->spinBox())->setValue(p.minOverlapRate);
+    qobject_cast<QDoubleSpinBox*>(m_overlapRate->spinBox())->setValue(p.overlapRate);
+    m_marginStrategy->setCurrentIndex(p.marginStrategy);
+    m_scanDirection->setCurrentIndex(p.scanDirection);
+    qobject_cast<QDoubleSpinBox*>(m_scanAngle->spinBox())->setValue(p.scanAngle);
+    qobject_cast<QDoubleSpinBox*>(m_interlayerRotation->spinBox())->setValue(p.interlayerRotation);
+    qobject_cast<QDoubleSpinBox*>(m_fillAreaComp->spinBox())->setValue(p.fillAreaComp);
+    qobject_cast<QDoubleSpinBox*>(m_endExtension->spinBox())->setValue(p.endExtension);
+
+	markAllSaved();
+}
+
+void SideBarPanel::markAllSaved()
+{
+	m_diameterRow->markSaved();
+	m_stickOutRow->markSaved();
+	m_layerHeight->markSaved();
+	m_firstLayerHeight->markSaved();
+	m_autoRange->markSaved();
+	m_zMin->markSaved();
+	m_zMax->markSaved();
+	m_minContourLen->markSaved();
+	m_collinearPrecision->markSaved();
+	m_gapCloseRadius->markSaved();
+	m_enableOffset->markSaved();
+	m_outerWallWidth->markSaved();
+	m_innerWallWidth->markSaved();
+	m_baseContour->markSaved();
+	m_autoOffset->markSaved();
+	m_offsetCount->markSaved();
+	m_offsetContourComp->markSaved();
+	m_startAngle->markSaved();
+	m_startPointStrategy->markSaved();
+	m_angleIncrement->markSaved();
+	m_lengthIncrement->markSaved();
+	m_beadWidth->markSaved();
+	m_fillType->markSaved();
+	m_adaptiveOverlap->markSaved();
+	m_maxOverlapRate->markSaved();
+	m_minOverlapRate->markSaved();
+	m_overlapRate->markSaved();
+	m_marginStrategy->markSaved();
+	m_scanDirection->markSaved();
+	m_scanAngle->markSaved();
+	m_interlayerRotation->markSaved();
+	m_fillAreaComp->markSaved();
+	m_endExtension->markSaved();
+	m_allResetBtn->setIcon(QIcon());
+	m_allResetBtn->setEnabled(false);
+}
+
+void SideBarPanel::setupModifiedCallbacks()
+{
+	auto cb = [this]() { updateAllResetState(); };
+	m_diameterRow->setModifiedCallback(cb);
+	m_stickOutRow->setModifiedCallback(cb);
+	m_layerHeight->setModifiedCallback(cb);
+	m_firstLayerHeight->setModifiedCallback(cb);
+	m_autoRange->setModifiedCallback(cb);
+	m_zMin->setModifiedCallback(cb);
+	m_zMax->setModifiedCallback(cb);
+	m_minContourLen->setModifiedCallback(cb);
+	m_collinearPrecision->setModifiedCallback(cb);
+	m_gapCloseRadius->setModifiedCallback(cb);
+	m_enableOffset->setModifiedCallback(cb);
+	m_outerWallWidth->setModifiedCallback(cb);
+	m_innerWallWidth->setModifiedCallback(cb);
+	m_baseContour->setModifiedCallback(cb);
+	m_autoOffset->setModifiedCallback(cb);
+	m_offsetCount->setModifiedCallback(cb);
+	m_offsetContourComp->setModifiedCallback(cb);
+	m_startAngle->setModifiedCallback(cb);
+	m_startPointStrategy->setModifiedCallback(cb);
+	m_angleIncrement->setModifiedCallback(cb);
+	m_lengthIncrement->setModifiedCallback(cb);
+	m_beadWidth->setModifiedCallback(cb);
+	m_fillType->setModifiedCallback(cb);
+	m_adaptiveOverlap->setModifiedCallback(cb);
+	m_maxOverlapRate->setModifiedCallback(cb);
+	m_minOverlapRate->setModifiedCallback(cb);
+	m_overlapRate->setModifiedCallback(cb);
+	m_marginStrategy->setModifiedCallback(cb);
+	m_scanDirection->setModifiedCallback(cb);
+	m_scanAngle->setModifiedCallback(cb);
+	m_interlayerRotation->setModifiedCallback(cb);
+	m_fillAreaComp->setModifiedCallback(cb);
+	m_endExtension->setModifiedCallback(cb);
+}
+
+void SideBarPanel::updateAllResetState()
+{
+	bool any = m_diameterRow->isModified()
+	        || m_stickOutRow->isModified()
+	        || m_layerHeight->isModified()
+	        || m_firstLayerHeight->isModified()
+	        || m_autoRange->isModified()
+	        || m_zMin->isModified()
+	        || m_zMax->isModified()
+	        || m_minContourLen->isModified()
+	        || m_collinearPrecision->isModified()
+	        || m_gapCloseRadius->isModified()
+	        || m_enableOffset->isModified()
+	        || m_outerWallWidth->isModified()
+	        || m_innerWallWidth->isModified()
+	        || m_baseContour->isModified()
+	        || m_autoOffset->isModified()
+	        || m_offsetCount->isModified()
+	        || m_offsetContourComp->isModified()
+	        || m_startAngle->isModified()
+	        || m_startPointStrategy->isModified()
+	        || m_angleIncrement->isModified()
+	        || m_lengthIncrement->isModified()
+	        || m_beadWidth->isModified()
+	        || m_fillType->isModified()
+	        || m_adaptiveOverlap->isModified()
+	        || m_maxOverlapRate->isModified()
+	        || m_minOverlapRate->isModified()
+	        || m_overlapRate->isModified()
+	        || m_marginStrategy->isModified()
+	        || m_scanDirection->isModified()
+	        || m_scanAngle->isModified()
+	        || m_interlayerRotation->isModified()
+	        || m_fillAreaComp->isModified()
+	        || m_endExtension->isModified();
+	m_allResetBtn->setIcon(any ? QIcon(":/icons/reset") : QIcon());
+	m_allResetBtn->setEnabled(any);
+}
+
+void SideBarPanel::onNewProcess()
+{
+    bool ok = false;
+    QString name = QInputDialog::getText(this, QStringLiteral("新建工艺"),
+        QStringLiteral("请输入名称:"), QLineEdit::Normal, QString(), &ok);
+    if (!ok || name.trimmed().isEmpty()) return;
+
+    ProcessProfile profile;
+    if (m_currentProfileId > 0) {
+        // 有选中 → 复制当前
+        profile = m_processRepo->copy(m_currentProfileId);
+        if (profile.id == 0) return;
+    }
+    // 无选中 → 使用默认值（ProcessProfile 各字段已有默认值）
+
+    profile.name = name.trimmed();
+    m_processRepo->save(profile);
+    m_currentProfileId = profile.id;
+    loadFromProfile(profile);
+    refreshProcessList();
+}
+
+void SideBarPanel::onDeleteProcess()
+{
+    if (m_currentProfileId == 0) return;
+
+    auto btn = QMessageBox::question(this, QStringLiteral("删除工艺"),
+        QStringLiteral("确定要删除该工艺配置吗？此操作不可撤销。"));
+    if (btn != QMessageBox::Yes) return;
+
+    m_processRepo->remove(m_currentProfileId);
+    m_currentProfileId = 0;
+    m_processSelectBtn->setText(QString());
+    refreshProcessList();
+}
+
+void SideBarPanel::onRenameProcess()
+{
+    if (m_currentProfileId == 0) return;
+
+    ProcessProfile p = m_processRepo->getById(m_currentProfileId);
+    if (p.id == 0) return;
+
+    bool ok = false;
+    QString name = QInputDialog::getText(this, QStringLiteral("编辑名称"),
+        QStringLiteral("请输入新名称:"), QLineEdit::Normal, p.name, &ok);
+    if (!ok || name.trimmed().isEmpty()) return;
+
+    p.name = name.trimmed();
+    m_processRepo->save(p);
+    refreshProcessList();
+}
+
+void SideBarPanel::onSaveProcess()
+{
+    if (m_currentProfileId == 0) return;
+
+    ProcessProfile p = m_processRepo->getById(m_currentProfileId);
+    if (p.id == 0) return;
+
+    // === 切片 ===
+    p.layerHeight      = qobject_cast<QDoubleSpinBox*>(m_layerHeight->spinBox())->value();
+    p.firstLayerHeight = qobject_cast<QDoubleSpinBox*>(m_firstLayerHeight->spinBox())->value();
+    p.autoRange        = m_autoRange->checkBox()->isChecked();
+    p.zMin             = qobject_cast<QDoubleSpinBox*>(m_zMin->spinBox())->value();
+    p.zMax             = qobject_cast<QDoubleSpinBox*>(m_zMax->spinBox())->value();
+
+    // === 精度 ===
+    p.minContourLen      = qobject_cast<QDoubleSpinBox*>(m_minContourLen->spinBox())->value();
+    p.collinearPrecision = qobject_cast<QDoubleSpinBox*>(m_collinearPrecision->spinBox())->value();
+    p.gapCloseRadius     = qobject_cast<QDoubleSpinBox*>(m_gapCloseRadius->spinBox())->value();
+
+    // === 偏移 ===
+    p.enableOffset       = m_enableOffset->checkBox()->isChecked();
+    p.outerWallWidth     = qobject_cast<QDoubleSpinBox*>(m_outerWallWidth->spinBox())->value();
+    p.innerWallWidth     = qobject_cast<QDoubleSpinBox*>(m_innerWallWidth->spinBox())->value();
+    p.baseContour        = m_baseContour->currentIndex();
+    p.autoOffset         = m_autoOffset->checkBox()->isChecked();
+    p.offsetCount        = qobject_cast<QSpinBox*>(m_offsetCount->spinBox())->value();
+    p.offsetContourComp  = qobject_cast<QDoubleSpinBox*>(m_offsetContourComp->spinBox())->value();
+    p.startAngle         = qobject_cast<QDoubleSpinBox*>(m_startAngle->spinBox())->value();
+    p.startPointStrategy = m_startPointStrategy->currentIndex();
+    p.angleIncrement     = qobject_cast<QDoubleSpinBox*>(m_angleIncrement->spinBox())->value();
+    p.lengthIncrement    = qobject_cast<QDoubleSpinBox*>(m_lengthIncrement->spinBox())->value();
+
+    // === 填充 ===
+    p.beadWidth          = qobject_cast<QDoubleSpinBox*>(m_beadWidth->spinBox())->value();
+    p.fillType           = m_fillType->currentIndex();
+    p.adaptiveOverlap    = m_adaptiveOverlap->checkBox()->isChecked();
+    p.maxOverlapRate     = qobject_cast<QDoubleSpinBox*>(m_maxOverlapRate->spinBox())->value();
+    p.minOverlapRate     = qobject_cast<QDoubleSpinBox*>(m_minOverlapRate->spinBox())->value();
+    p.overlapRate        = qobject_cast<QDoubleSpinBox*>(m_overlapRate->spinBox())->value();
+    p.marginStrategy     = m_marginStrategy->currentIndex();
+    p.scanDirection      = m_scanDirection->currentIndex();
+    p.scanAngle          = qobject_cast<QDoubleSpinBox*>(m_scanAngle->spinBox())->value();
+    p.interlayerRotation = qobject_cast<QDoubleSpinBox*>(m_interlayerRotation->spinBox())->value();
+    p.fillAreaComp       = qobject_cast<QDoubleSpinBox*>(m_fillAreaComp->spinBox())->value();
+    p.endExtension       = qobject_cast<QDoubleSpinBox*>(m_endExtension->spinBox())->value();
+
+    m_processRepo->save(p);
+	markAllSaved();
+}

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <QWidget>
 #include <QString>
@@ -12,12 +12,16 @@
 #include "ParamRow.h"
 #include "ParamHeader.h"
 
+class ProcessRepository;
+class QMenu;
+struct ProcessProfile;
+
 class SideBarPanel : public QWidget
 {
 	Q_OBJECT
 
 public:
-	SideBarPanel(QWidget *parent = nullptr);
+	SideBarPanel(ProcessRepository* repo, QWidget *parent = nullptr);
 	~SideBarPanel() override = default;
 
 private:
@@ -43,6 +47,10 @@ private:
 	QPushButton* m_processSaveBtn = nullptr;
 	QPushButton* m_processMoreBtn = nullptr;
 
+	ProcessRepository* m_processRepo = nullptr;
+	QMenu* m_processMoreMenu = nullptr;
+	QMenu* m_processSelectMenu = nullptr;
+	int m_currentProfileId = 0;
 
 	QTabBar* m_tapBar = nullptr;
 
@@ -57,7 +65,7 @@ private:
 	ParamRow* m_zMin{ nullptr };
 
 	ParamRow* m_zMax{ nullptr };
-	
+
 	ParamHeader* m_precisionTitle{ nullptr };
 
 	ParamRow* m_minContourLen{ nullptr };
@@ -158,26 +166,26 @@ QPushButton#SelectBtn:hover {
 }
 )";
 	const QString processTapBar = R"(
-        QTabBar { 
-            background: transparent; 
+        QTabBar {
+            background: transparent;
         }
         QTabBar::tab {
-            background: transparent; 
+            background: transparent;
             color: #6B6B6B;
-            border: none; 
-            
-            border-bottom: 3px solid transparent; 
+            border: none;
+
+            border-bottom: 3px solid transparent;
             padding: 3px 2px;
             margin-right: 20px;
         }
-        QTabBar::tab:hover { 
-            background: transparent; 
-            color: #6B6B6B; 
+        QTabBar::tab:hover {
+            background: transparent;
+            color: #6B6B6B;
         }
-        QTabBar::tab:selected { 
-            color: #000000; 
-            font-weight: bold; 
-            border-bottom: 3px solid #00AE42; 
+        QTabBar::tab:selected {
+            color: #000000;
+            font-weight: bold;
+            border-bottom: 3px solid #00AE42;
         }
     )";
 	const QString sideBarPanelQSS = R"(
@@ -235,5 +243,16 @@ QScrollArea#PanelScroll QScrollBar::sub-page:vertical {
 	QWidget* createProcessCard(QWidget* parent = nullptr);
 
 	QWidget* createProcessContent(QWidget* parent = nullptr);
-};
 
+	void refreshProcessList();
+	void loadFromProfile(const ProcessProfile& p);
+	void markAllSaved();
+	void setupModifiedCallbacks();
+	void updateAllResetState();
+
+private slots:
+	void onNewProcess();
+	void onDeleteProcess();
+	void onRenameProcess();
+		void onSaveProcess();
+};
