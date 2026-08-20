@@ -60,6 +60,53 @@ static const QList<Migration> kMigrations = {
       "ALTER TABLE process_profiles ADD COLUMN created_at TEXT;"
       "ALTER TABLE process_profiles ADD COLUMN updated_at TEXT" },
 
+    { 3, "Create machine_profiles table",
+      "CREATE TABLE IF NOT EXISTS machine_profiles ("
+      "  id                  INTEGER PRIMARY KEY AUTOINCREMENT,"
+      "  name                TEXT    NOT NULL UNIQUE,"
+      "  kinematics          INTEGER DEFAULT 0,"
+      "  heat_source         INTEGER DEFAULT 0,"
+      "  max_height          REAL    DEFAULT 500.0,"
+      "  max_x               REAL    DEFAULT 500.0,"
+      "  max_y               REAL    DEFAULT 500.0,"
+      "  origin_x            REAL    DEFAULT 0.0,"
+      "  origin_y            REAL    DEFAULT 0.0,"
+      "  image_path          TEXT    DEFAULT '',"
+      "  image_data          BLOB,"
+      "  print_start_gcode   TEXT    DEFAULT '',"
+      "  print_end_gcode     TEXT    DEFAULT '',"
+      "  path_start_gcode    TEXT    DEFAULT '',"
+      "  path_end_gcode      TEXT    DEFAULT '',"
+      "  layer_start_gcode   TEXT    DEFAULT '',"
+      "  layer_end_gcode     TEXT    DEFAULT '',"
+      "  interlayer_cooling_gcode TEXT DEFAULT '',"
+      "  max_speed_x         REAL    DEFAULT 1000.0,"
+      "  max_speed_y         REAL    DEFAULT 1000.0,"
+      "  max_speed_z         REAL    DEFAULT 1000.0,"
+      "  max_speed_e         REAL    DEFAULT 1000.0,"
+      "  notes               TEXT    DEFAULT '',"
+      "  created_at          TEXT,"
+      "  updated_at          TEXT"
+      ");"
+      "INSERT INTO machine_profiles (name)"
+      "  SELECT 'Rongsu Laser One'"
+      "  WHERE NOT EXISTS (SELECT 1 FROM machine_profiles)" },
+
+    { 4, "Add image_data column to machine_profiles",
+      "ALTER TABLE machine_profiles ADD COLUMN image_data BLOB" },
+
+    { 5, "Add G-code columns and image_path to machine_profiles",
+      "ALTER TABLE machine_profiles ADD COLUMN image_path TEXT DEFAULT '';"
+      "ALTER TABLE machine_profiles ADD COLUMN print_start_gcode TEXT DEFAULT '';"
+      "ALTER TABLE machine_profiles ADD COLUMN print_end_gcode TEXT DEFAULT '';"
+      "ALTER TABLE machine_profiles ADD COLUMN path_start_gcode TEXT DEFAULT '';"
+      "ALTER TABLE machine_profiles ADD COLUMN path_end_gcode TEXT DEFAULT '';"
+      "ALTER TABLE machine_profiles ADD COLUMN layer_start_gcode TEXT DEFAULT '';"
+      "ALTER TABLE machine_profiles ADD COLUMN layer_end_gcode TEXT DEFAULT ''" },
+
+    { 6, "Add interlayer cooling G-code column to machine_profiles",
+      "ALTER TABLE machine_profiles ADD COLUMN interlayer_cooling_gcode TEXT DEFAULT ''" },
+
 };
 
 /************************** 构造函数 **************************/
@@ -147,29 +194,42 @@ int DatabaseMigrator::detectBootstrapVersion() const
 {
     QSqlDatabase& db = m_provider.db();
 
-    // Does the table exist at all?
-    if (!db.tables().contains("machine_profiles"))
-        return 0;  // fresh database — apply all migrations
+    // Check machine_profiles first
+    if (db.tables().contains("machine_profiles")) {
+        QSqlRecord rec = db.record("machine_profiles");
 
-    QSqlRecord rec = db.record("machine_profiles");
+        // v6+ has the interlayer cooling G-code column
+        if (rec.contains("interlayer_cooling_gcode"))
+            return 6;
 
-    // The last migration added max_accel_* columns — if present, v4+
-    if (rec.contains("max_accel_e"))
-        return 4;
+        // v5+ has the six G-code columns
+        if (rec.contains("layer_end_gcode"))
+            return 5;
 
-    // If speed columns exist but accel doesn't, we're at v3
-    if (rec.contains("max_speed_e"))
-        return 3;
+        // v4+ has the image_data column
+        if (rec.contains("image_data"))
+            return 4;
 
-    // If speed x exists but not the others, we're at v2
-    if (rec.contains("max_speed_x"))
+        // v3+ has the notes column
+        if (rec.contains("notes"))
+            return 3;
+
+        // Legacy detection for older machine_profiles schemas
+        if (rec.contains("max_speed_e"))
+            return 3;
+
+        if (rec.contains("max_speed_x"))
+            return 2;
+
+        if (rec.contains("name"))
+            return 1;
+    }
+
+    // If process_profiles exists, we're at least at v2
+    if (db.tables().contains("process_profiles"))
         return 2;
 
-    // Table exists with core columns — at least v1
-    if (rec.contains("name"))
-        return 1;
-
-    return 0;
+    return 0;  // fresh database — apply all migrations
 }
 
 /************************** 迁移的待执行的字段 **************************/

@@ -32,6 +32,10 @@
         <file alias="delete">icons/sideBarPanel/sideBar_delete.svg</file>
         <file alias="more">icons/sideBarPanel/sideBar_more.svg</file>
         <file alias="add">icons/sideBarPanel/sideBar_add.svg</file>
+        <file alias="info">icons/sideBarPanel/sideBar_info.svg</file>
+        <file alias="cogPage">icons/sideBarPanel/sideBar_cogPage.svg</file>
+        <file alias="speed">icons/sideBarPanel/sideBar_speed.svg</file>
+        <file alias="notes">icons/sideBarPanel/sideBar_notes.svg</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="MiSans_Bold">fonts/MiSans-Bold.otf</file>

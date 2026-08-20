@@ -75,7 +75,7 @@ CustomDialog::CustomDialog(QWidget* parent, const QString& title)
 {
 	setObjectName("CustomDialog");
 	setFixedWidth(400);
-	setFixedHeight(157);
+	setFixedHeight(130);
 	setStyleSheet(kStyle);
 	setWindowTitle(title);
 	setWindowFlags((windowFlags() & ~Qt::WindowContextHelpButtonHint) | Qt::WindowStaysOnTopHint);

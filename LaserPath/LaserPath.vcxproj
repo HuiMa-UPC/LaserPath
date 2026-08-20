@@ -14,6 +14,8 @@
     <ClCompile Include="DatabaseMigrator.cpp" />
     <ClCompile Include="database\DatabaseManager.cpp" />
     <ClCompile Include="database\ProcessRepository.cpp" />
+    <ClCompile Include="database\MachineRepository.cpp" />
+    <ClCompile Include="EditMachineDialog.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="mian.cpp" />
     <ClCompile Include="ParamHeader.cpp" />
@@ -44,11 +46,15 @@
     <ClInclude Include="database\DatabaseManager.h" />
     <ClInclude Include="database\ProcessRepository.h" />
     <ClInclude Include="database\ProcessProfile.h" />
+    <ClInclude Include="database\MachineProfile.h" />
+    <ClInclude Include="database\MachineRepository.h" />
+    <QtMoc Include="EditMachineDialog.h" />
     <ClInclude Include="IDatabaseProvider.h" />
     <QtMoc Include="CustomDialog.h" />
     <QtMoc Include="ParamHeader.h" />
     <QtMoc Include="ParamRow.h" />
     <QtMoc Include="SectionHeader.h" />
+    <ClInclude Include="PlateGridPreview.h" />
     <ClInclude Include="Styles.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

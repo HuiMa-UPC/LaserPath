@@ -11,6 +11,7 @@
 #include <QVariant>
 
 class QMenu;
+class QLineEdit;
 
 struct Dependent {
     QWidget* widget = nullptr;
@@ -36,6 +37,10 @@ public:
 
 	ParamRow(const QString& name, const QVector<QString>& list, QWidget* parent);
 
+	ParamRow(const QString& name, const QString& text, QWidget* parent);
+
+	ParamRow(const QString& name, QWidget* inputWidget, QWidget* parent);
+
 	~ParamRow() override = default;
 
 	QAbstractSpinBox* spinBox() const { return m_spinBox; }
@@ -47,6 +52,10 @@ public:
 	QPushButton* combBtn() const { return m_combBtn; }
 
 	QMenu* menu() const { return m_menu; }
+
+	QLineEdit* lineEdit() const { return m_lineEdit; }
+
+	QWidget* customInput() const { return m_customInput; }
 
 	int currentIndex() const { return m_currentIndex; }
 	void setCurrentIndex(int index);
@@ -78,6 +87,8 @@ private:
 	QWidget* m_inputContainer = nullptr;
 	QCheckBox* m_checkBox = nullptr;
 	QPushButton* m_combBtn = nullptr;
+	QLineEdit* m_lineEdit = nullptr;
+	QWidget* m_customInput = nullptr;
 	QMenu* m_menu = nullptr;
 	int m_currentIndex = 0;
 	QVector<Dependent> m_dependents;

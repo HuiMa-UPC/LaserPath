@@ -4,6 +4,7 @@
 #include "TopBar.h"
 #include "SideBarPanel.h"
 #include "database/ProcessRepository.h"
+#include "database/MachineRepository.h"
 #include "database/DatabaseManager.h"
 
 #include <QMainWindow>
@@ -24,6 +25,7 @@ private:
 	QSplitter* m_bodySplitter;
 	SideBarPanel* m_sideBarPanel;
 	ProcessRepository m_processRepo = ProcessRepository(DatabaseManager::instance());
+	MachineRepository m_machineRepo = MachineRepository(DatabaseManager::instance());
 	QWidget* m_3dPage;
 	const QString mainWindowQSS = R"(
 QWidget#MainWindow {

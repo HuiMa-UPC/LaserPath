@@ -11,8 +11,10 @@
 #include "SectionHeader.h"
 #include "ParamRow.h"
 #include "ParamHeader.h"
+#include "EditMachineDialog.h"
 
 class ProcessRepository;
+class MachineRepository;
 class QMenu;
 struct ProcessProfile;
 
@@ -21,7 +23,7 @@ class SideBarPanel : public QWidget
 	Q_OBJECT
 
 public:
-	SideBarPanel(ProcessRepository* repo, QWidget *parent = nullptr);
+	SideBarPanel(ProcessRepository* processRepo, MachineRepository* machineRepo, QWidget *parent = nullptr);
 	~SideBarPanel() override = default;
 
 private:
@@ -36,6 +38,8 @@ private:
 
 	ParamRow* m_diameterRow = nullptr;
 	ParamRow* m_stickOutRow = nullptr;
+
+	EditMachineDialog* m_editMachineDialog = nullptr;
 #pragma endregion
 
 #pragma region Process
@@ -49,6 +53,7 @@ private:
 	QPushButton* m_processRenameBtn = nullptr;
 	QPushButton* m_processDeleteBtn = nullptr;
 	ProcessRepository* m_processRepo = nullptr;
+	MachineRepository* m_machineRepo = nullptr;
 	QMenu* m_processSelectMenu = nullptr;
 	int m_currentProfileId = 0;
 

@@ -18,9 +18,10 @@
 #include <QDebug>
 
 
-SideBarPanel::SideBarPanel(ProcessRepository* repo, QWidget *parent)
+SideBarPanel::SideBarPanel(ProcessRepository* processRepo, MachineRepository* machineRepo, QWidget *parent)
 	: QWidget(parent)
-	, m_processRepo(repo)
+	, m_processRepo(processRepo)
+	, m_machineRepo(machineRepo)
 {
     setAttribute(Qt::WA_StyledBackground, true);
     setObjectName("SideBarPanel");
@@ -34,6 +35,15 @@ SideBarPanel::SideBarPanel(ProcessRepository* repo, QWidget *parent)
     layout->addWidget(createProcessCard(this));
 
     setupModifiedCallbacks();
+
+    // 启动时自动加载第一条工艺数据
+    auto names = m_processRepo->listAllName();
+    if (!names.isEmpty()) {
+        m_currentProfileId = names.first().first;
+        ProcessProfile profile = m_processRepo->getById(m_currentProfileId);
+        loadFromProfile(profile);
+        m_processSelectBtn->setText(profile.name);
+    }
 }
 
 #pragma region Device
@@ -106,6 +116,22 @@ QWidget* SideBarPanel::createDeviceContent(QWidget* parent)
     m_editBtn->setStyleSheet(Styles::kIconBtn);
     m_editBtn->setIcon(QIcon(":/icons/edit"));
     photoLayout->addWidget(m_editBtn, 0, Qt::AlignTop);
+
+    m_editMachineDialog = new EditMachineDialog(m_machineRepo, deviceCard);
+
+    connect(m_editBtn, &QPushButton::clicked, this, [this]() {
+
+        // exec() 模态弹出，阻塞
+        int ret = m_editMachineDialog->exec();
+        if (ret == QDialog::Accepted)
+        {
+            // 用户点击确定
+        }
+        else
+        {
+            // 用户点击取消/关闭窗口
+        }
+        });
 
     m_selectBtn = new QPushButton(deviceCard);
     m_selectBtn->setObjectName("SelectBtn");

@@ -51,7 +51,7 @@ void MainWindow::setWindowUI(QWidget* parent)
 	m_bodySplitter = new QSplitter(Qt::Horizontal, mainWindow);
 	m_bodySplitter->setHandleWidth(1);
 
-	m_sideBarPanel = new SideBarPanel(&m_processRepo);
+	m_sideBarPanel = new SideBarPanel(&m_processRepo, &m_machineRepo);
 	m_3dPage = new QWidget();
 
 	m_bodySplitter->addWidget(m_sideBarPanel);

@@ -1,10 +1,11 @@
-#include "ParamRow.h"
+﻿#include "ParamRow.h"
 #include "Styles.h"
 
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QIcon>
 #include <QEvent>
+#include <QLineEdit>
 #include <QMenu>
 #include <QStyle>
 
@@ -13,8 +14,7 @@ const QString kParamRowQSS = R"(
 QWidget#ParamRow {
 	min-width: 340px;
 	max-width: 340px;
-	min-height: 28px;
-	max-height: 28px;
+
 }
 QLabel#NameLabel {
 	min-width: 180px;
@@ -50,7 +50,7 @@ QAbstractSpinBox#SpinBox::down-button {
 QLabel#SuffixLabel {
 	font-size: 10pt;
 	color: #ABADAE;
-	margin-left: 30px;
+	margin-left: 10px;
 }
 
 QWidget#ParamRow QCheckBox {
@@ -75,6 +75,22 @@ QWidget#ParamRow QCheckBox::indicator:checked {
 
 QWidget#ParamRow QCheckBox::indicator:hover {
     border: 1px solid #00AE42;
+}
+QLineEdit#InlineEdit {
+	border: 1px solid #ABADAE;
+	border-radius: 0px;
+	min-width: 108px;
+	max-width: 108px;
+	min-height: 25px;
+	max-height: 25px;
+	padding-left: 2px;
+	padding-right: 10px;
+}
+QLineEdit#InlineEdit:hover {
+	border: 1px solid #00AE42;
+}
+QLineEdit#InlineEdit:focus {
+	border: 1px solid #00AE42;
 }
 QPushButton#CombBtn {
 	border: 1px solid #ABADAE;
@@ -204,6 +220,34 @@ ParamRow::ParamRow(const QString& name, const QVector<QString>& list, QWidget* p
 	rowLayout->addWidget(m_combBtn);
 }
 
+ParamRow::ParamRow(const QString& name, const QString& text, QWidget* parent)
+	: QWidget(parent)
+{
+	initCommon(name);
+
+	m_inputContainer = new QWidget(this);
+	m_inputContainer->setObjectName("InputContainer");
+	m_inputContainer->setAttribute(Qt::WA_Hover, true);
+	m_inputContainer->installEventFilter(this);
+
+	m_lineEdit = new QLineEdit(text, m_inputContainer);
+	m_lineEdit->setObjectName("InlineEdit");
+	connect(m_lineEdit, &QLineEdit::textChanged, this, [this](){ updateUndoVisibility(); });
+
+	auto* rowLayout = static_cast<QHBoxLayout*>(layout());
+	rowLayout->addWidget(m_inputContainer);
+}
+
+ParamRow::ParamRow(const QString& name, QWidget* inputWidget, QWidget* parent)
+	: QWidget(parent)
+	, m_customInput(inputWidget)
+{
+	initCommon(name);
+
+	auto* rowLayout = static_cast<QHBoxLayout*>(layout());
+	rowLayout->addWidget(inputWidget);
+}
+
 void ParamRow::setCurrentIndex(int index)
 {
 	if (!m_combBtn || index < 0 || index >= m_items.size())
@@ -295,25 +339,33 @@ void ParamRow::buildParamRow(const QString& name, const QString& suffix)
 
 bool ParamRow::eventFilter(QObject* obj, QEvent* event)
 {
-	if (m_spinBox && m_inputContainer)
+	if (m_inputContainer)
 	{
-		if (event->type() == QEvent::MouseButtonPress
-			&& obj != m_spinBox
-			&& (obj == m_inputContainer || obj->parent() == m_inputContainer))
-		{
-			m_spinBox->setFocus();
-			m_spinBox->selectAll();
-		}
+		QWidget* focusTarget = m_spinBox
+			? static_cast<QWidget*>(m_spinBox)
+			: (m_customInput ? m_customInput : m_lineEdit);
 
-		if (obj == m_spinBox) {
-			if (event->type() == QEvent::FocusIn) {
-				m_inputContainer->setProperty("focused", true);
-				m_inputContainer->style()->unpolish(m_inputContainer);
-				m_inputContainer->style()->polish(m_inputContainer);
-			} else if (event->type() == QEvent::FocusOut) {
-				m_inputContainer->setProperty("focused", false);
-				m_inputContainer->style()->unpolish(m_inputContainer);
-				m_inputContainer->style()->polish(m_inputContainer);
+		if (focusTarget)
+		{
+			if (event->type() == QEvent::MouseButtonPress
+				&& obj != focusTarget
+				&& (obj == m_inputContainer || obj->parent() == m_inputContainer))
+			{
+				focusTarget->setFocus();
+				if (m_spinBox)
+					m_spinBox->selectAll();
+			}
+
+			if (obj == focusTarget) {
+				if (event->type() == QEvent::FocusIn) {
+					m_inputContainer->setProperty("focused", true);
+					m_inputContainer->style()->unpolish(m_inputContainer);
+					m_inputContainer->style()->polish(m_inputContainer);
+				} else if (event->type() == QEvent::FocusOut) {
+					m_inputContainer->setProperty("focused", false);
+					m_inputContainer->style()->unpolish(m_inputContainer);
+					m_inputContainer->style()->polish(m_inputContainer);
+				}
 			}
 		}
 	}
@@ -325,6 +377,8 @@ QVariant ParamRow::currentValue() const
 {
 	if (m_checkBox)
 		return m_checkBox->isChecked();
+	if (m_lineEdit)
+		return m_lineEdit->text();
 	if (m_combBtn)
 		return m_currentIndex;
 	if (m_spinBox) {
@@ -340,6 +394,10 @@ void ParamRow::setValueTo(const QVariant& v)
 {
 	if (m_checkBox) {
 		m_checkBox->setChecked(v.toBool());
+		return;
+	}
+	if (m_lineEdit) {
+		m_lineEdit->setText(v.toString());
 		return;
 	}
 	if (m_combBtn && v.toInt() >= 0 && v.toInt() < m_items.size()) {
@@ -378,6 +436,7 @@ void ParamRow::revertToSaved()
 {
 	if (!m_dbValue.isValid()) return;
 	setValueTo(m_dbValue);
+	updateUndoVisibility();
 }
 
 bool ParamRow::isModified() const
